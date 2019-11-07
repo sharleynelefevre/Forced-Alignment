@@ -3,7 +3,10 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 
 `hard-alignment.py` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
 
-You should then launch `hard-alignment-friends.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source.
+You should then launch `hard-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source. Usage :
+```bash
+hard-alignment.sh /path/to/your/data/${SERIE_URI}/file_list.txt ${SERIE_URI}
+```
 
 Once vrbs is done you can continue with `hard-alignment.py` (press `Enter`) which will transform the XML output of vrbs into [Gecko](https://github.com/gong-io/gecko) compliant-JSON. The file formats are described below. The script also removes speakers id from the transcript and puts them instead in a proper JSON attribute : `speaker["id"]`.
 
