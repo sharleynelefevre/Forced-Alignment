@@ -10,6 +10,9 @@ hard-alignment.sh /path/to/your/data/${SERIE_URI}/file_list.txt ${SERIE_URI}
 
 Once vrbs is done you can continue with `hard-alignment.py` (press `Enter`) which will transform the XML output of vrbs into [Gecko](https://github.com/gong-io/gecko) compliant-JSON. The file formats are described below. The script also removes speakers id from the transcript and puts them instead in a proper JSON attribute : `speaker["id"]`.
 
+After that, you may or may not want to convert all the annotations from gecko_JSON to RTTM, this relies on pyannote.core
+Type "n" or "no" (case insensitive) if you don't want to.
+
 *You're done !*
 
 # Format

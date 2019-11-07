@@ -3,89 +3,36 @@
 
 # # Dependencies
 
+#I/O
 import json
-import pysrt
 import xml.etree.ElementTree as ET
 import re
 import os
+
+#Meta
+from typing import TextIO,Union
+import warnings
+
+#utils
+from utils import normalize_string
+from convert import *
+
+#pyannote
+from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeature,SlidingWindow
 
 # # Hyperparameters
 
 SERIE_PATH=os.path.join("pyannote-db-plumcot","Plumcot","data","Friends")
 TRANSCRIPTS_PATH=os.path.join(SERIE_PATH,"transcripts")
 ALIGNED_PATH=os.path.join(SERIE_PATH,"hard-alignment")
-
-
-# # Utils
-def normalize_string(string):
-    """
-    Lowercases and removes punctuation from input string, also strips the spaces from the borders and removes multiple spaces
-    """
-    string =re.sub(r"([,.!?'-:])", r"", string).lower()
-    string = re.sub(' +', ' ',string).strip()
-    return string
-
-# # Transform
-
-def xml_to_GeckoJSON(xml_root,raw_script):
-    """
-    Parameters:
-        xml_root : root of the xml tree defined by vrbs for hard alignment. root[3] should be SegmentList, a list of speech segments
-        raw_script : `str` : the script as defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
-            Each line is a speech turn and the first (space-separated) token is the normalized speaker id.
-    Returns:
-        gecko_json : a JSON `dict` based on the demo file of https://github.com/gong-io/gecko/blob/master/samples/demo.json
-            should be written to a file using json.dump"""
-    gecko_json=json.loads("""{
-      "schemaVersion" : "2.0",
-      "monologues" : [  ]
-    }""")
-    gecko_json["monologues"]=[[] for _ in raw_script.split("\n")]
-    json_i=0
-    terms=[]
-    current_speaker=xml_root[3][0][0].text.strip()[1:-1]
-    for i,speech_segment in enumerate(xml_root[3]):
-        for word in speech_segment:
-            if word.text.strip()[0]=="[":#speaker id -> add new speaker
-                speaker={
-                "name" : None,
-                "id" : current_speaker,#first and last charcater should be []
-                "vrbs_id" : speech_segment.attrib['spkid']
-                    }
-                current_speaker=word.text.strip()[1:-1]
-                gecko_json["monologues"][json_i]={
-                    "speaker":speaker,
-                    "terms":terms
-                    }
-                json_i+=1
-                terms=[]
-            else:
-                terms.append(
-                {
-                    "start" : float(word.attrib['stime']),
-                    "end" : float(word.attrib['stime'])+float(word.attrib['dur']),
-                    "text" : word.text,
-                    "type" : "WORD",
-                    "confidence": word.attrib['conf']
-                })
-    speaker={
-    "name" : None,
-    "id" : current_speaker,#first and last charcater should be []
-    "vrbs_id" : speech_segment.attrib['spkid']
-        }
-    new_monolog={
-            "speaker":speaker,
-            "terms":terms
+SERIE_SPLIT={"test":[1],
+            "dev":[2,3],
+            "train":[4,5,6,7,8,9,10]
             }
-    if json_i<len(gecko_json["monologues"]):
-        gecko_json["monologues"][json_i]=new_monolog
-    else:
-        gecko_json["monologues"].append(new_monolog)
-    gecko_json["monologues"].pop(0)
-
-    return gecko_json
-
-# # Main
+ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"Friends_{}collar.rttm".format(HARD_ALIGNMENT_COLLAR))
+ANNOTATED_PATH=os.path.join(ALIGNED_PATH,"Friends_{}confidence.uem".format(VRBS_CONFIDENCE_THRESHOLD))
+VRBS_CONFIDENCE_THRESHOLD=0.5#used in gecko_JSON_to_Annotation function
+HARD_ALIGNMENT_COLLAR=0.15#used in gecko_JSON_to_Annotation function
 
 def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     """
@@ -140,15 +87,124 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
             file_counter+=1
             with open(json_path,"w") as file:
                 json.dump(gecko_json,file)
-       
-def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH):
+      SERIE_PATH=os.path.join("vol","work","lerner","pyannote-db-plumcot","Plumcot","data","Friends")
+def append_to_rttm(file: TextIO,
+                         output: Union[Timeline, Annotation]):
+        """Write pipeline output to "rttm" file
+        Parameters
+        ----------
+        file : file object
+        output : `pyannote.core.Annotation`
+            Pipeline output
+        """
+        if isinstance(output, Annotation):
+            for s, t, l in output.itertracks(yield_label=True):
+                line = (
+                    f'SPEAKER {output.uri} 1 {s.start:.3f} {s.duration:.3f} '
+                    f'<NA> <NA> {l} <NA> <NA>\n'
+                )
+                file.write(line)
+            return
+
+        msg = (
+            f'Dumping {output.__class__.__name__} instances to "rttm" files '
+            f'is not supported.'
+        )
+        raise NotImplementedError(msg)
+def append_to_uem(file: TextIO,
+                         output: Timeline):
+        """Write pipeline output to "uem" file
+        Parameters
+        ----------
+        file : file object
+        output : `pyannote.core.Timeline`
+            Pipeline output
+        """
+        if isinstance(output, Timeline):
+            for segment in output:
+                line = "{} 1 {} {}\n".format(
+                    output.uri,
+                    segment.start,
+                    segment.end
+                    )
+                file.write(line)
+            return
+
+        msg = (
+            f'Dumping {output.__class__.__name__} instances to "rttm" files '
+            f'is not supported.'
+        )
+        raise NotImplementedError(msg)
+def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.0, HARD_ALIGNMENT_COLLAR=0.0):
+    """
+    Converts gecko_JSON files to RTTM using pyannote `Annotation`.
+    Also keeps a track of files in train, dev and test sets.
+    Also adds annotated parts of the files to a UEM depending on HARD_ALIGNMENT_COLLAR.
+
+    Parameters:
+    -----------
+    ALIGNED_PATH : path where gecko_JSON files are stored.
+    ANNOTATION_PATH : path where to store the annotations in RTTM.
+    ANNOTATED_PATH : path where to store the annotated parts of the files in UEM.
+    VRBS_CONFIDENCE_THRESHOLD : `float`, the segments with confidence under VRBS_CONFIDENCE_THRESHOLD won't be added to UEM file.
+        Defaults to 0.0
+    HARD_ALIGNMENT_COLLAR: `float`, Merge tracks with same label and separated by less than `HARD_ALIGNMENT_COLLAR` seconds.
+        Defaults to 0.0
+    """
+    if os.path.exists(ANNOTATION_PATH):
+        raise ValueError("""{} already exists.
+                         You probably don't wan't to append any more data to it.
+                         If you do, remove this if statement.""".format(ANNOTATION_PATH))
+    if os.path.exists(ANNOTATED_PATH):
+        raise ValueError("""{} already exists.
+                         You probably don't wan't to append any more data to it.
+                         If you do, remove this if statement.""".format(ANNOTATED_PATH))
+    file_counter=0
+    train_list,dev_list,test_list=[],[],[]#keep track of file name used for train, dev and test sets
+    for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
+        uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
+        if extension==".json":
+            print("processing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="\r")
+            #read file, convert to annotation and write rttm
+            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
+                gecko_JSON=json.load(file)
+            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,HARD_ALIGNMENT_COLLAR)
+            with open(ANNOTATION_PATH,'a') as file:
+                append_to_rttm(file,annotation)
+            with open(ANNOTATED_PATH,'a') as file:
+                append_to_uem(file,annotated)
+            #train dev or test ?
+            season_number=int(re.findall(r'\d+', file_name.split(".")[1])[0])
+            if season_number in SERIE_SPLIT["test"]:
+                test_list.append(uri)
+            elif season_number in SERIE_SPLIT["dev"]:
+                dev_list.append(uri)
+            elif season_number in SERIE_SPLIT["train"]:
+                train_list.append(uri)
+            else:
+                raise ValueError("Expected season_number to be in SERIE_SPLIT : {}\ngot {} instead".format(SERIE_SPLIT,season_number))
+            file_counter+=1
+    with open(os.path.join(SERIE_PATH,"train_list.lst"),"w") as file:
+        file.write("\n".join(train_list))
+    with open(os.path.join(SERIE_PATH,"dev_list.lst"),"w") as file:
+        file.write("\n".join(dev_list))
+    with open(os.path.join(SERIE_PATH,"test_list.lst"),"w") as file:
+        file.write("\n".join(test_list))
+    print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
+
+def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
     print("done anonymizing, you should now launch vrbs before converting")
     input("Press Enter when vrbs is done...")
     print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
     write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH)
-    print("done :)")
+    answer=input("Would you like to convert annotations from gecko_JSON to RTTM ? [Y]/N")
+    answer=answer.lower().strip()
+    if answer != 'n' and answer != 'no':
+        gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR)
+    else:
+        print("Okay, then you're done ;)")
 
 if __name__ == '__main__':
-    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH)
+    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR)
