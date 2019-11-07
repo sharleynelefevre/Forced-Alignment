@@ -9,7 +9,6 @@ import xml.etree.ElementTree as ET
 import re
 import os
 
-
 # # Hyperparameters
 
 SERIE_PATH=os.path.join("pyannote-db-plumcot","Plumcot","data","Friends")
@@ -25,21 +24,6 @@ def normalize_string(string):
     string =re.sub(r"([,.!?'-:])", r"", string).lower()
     string = re.sub(' +', ' ',string).strip()
     return string
-
-
-
-
-
-# ## JSON (Gecko)
-
-print("""gecko_json["monologues"]#list of speakers
-gecko_json["monologues"][0]#1st speech turn
-gecko_json["monologues"][0]["speaker"]#1st speech turn's speaker
-gecko_json["monologues"][0]["terms"]#1st speech turn's list of terms
-gecko_json["monologues"][0]["terms"][0]#1st speech turn's 1st term
-gecko_json["monologues"][0]["terms"][0]["start"]#1st speech turn's 1st term start time in SECONDS
-gecko_json["monologues"][0]["terms"][0]["confidence"]#1st speech turn's 1st term start confidence (between 0.0 and 1.0)""")
-
 
 # # Transform
 
@@ -58,9 +42,9 @@ def xml_to_GeckoJSON(xml_root,raw_script):
     }""")
     gecko_json["monologues"]=[[] for _ in raw_script.split("\n")]
     json_i=0
-    terms=[] 
+    terms=[]
     current_speaker=xml_root[3][0][0].text.strip()[1:-1]
-    for i,speech_segment in enumerate(xml_root[3]):        
+    for i,speech_segment in enumerate(xml_root[3]):
         for word in speech_segment:
             if word.text.strip()[0]=="[":#speaker id -> add new speaker
                 speaker={
@@ -98,9 +82,8 @@ def xml_to_GeckoJSON(xml_root,raw_script):
     else:
         gecko_json["monologues"].append(new_monolog)
     gecko_json["monologues"].pop(0)
-        
-    return gecko_json
 
+    return gecko_json
 
 # # Main
 
@@ -112,12 +95,12 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     file_counter=0
     file_list=[]
     for file_name in os.listdir(TRANSCRIPTS_PATH):
-        first_name,extension=os.path.splitext(file_name)        
+        first_name,extension=os.path.splitext(file_name)
         if extension==".txt":
             file_list.append(first_name)#keep a list for qsub on m107
-            
+
             #open file
-            with open(os.path.join(TRANSCRIPTS_PATH,file_name),"r") as file:    
+            with open(os.path.join(TRANSCRIPTS_PATH,file_name),"r") as file:
                 raw_script=file.read()
 
             #anonymyzes the script
@@ -133,7 +116,7 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
             with open(anonymous_path,"w") as file:
                 file.write(bracket_raw_script)
             file_counter+=1
-            
+
     with open(os.path.join(SERIE_PATH,"file_list.txt"),"w") as file:
         file.write("\n".join(file_list)    )
     print("succesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
@@ -147,27 +130,21 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
     for file_name in os.listdir(ALIGNED_PATH):
         first_name,extension=os.path.splitext(file_name)#first_name should be common to xml and txt file
         if extension==".xml":
-            with open(os.path.join(TRANSCRIPTS_PATH,first_name+".txt"),"r") as file:    
+            with open(os.path.join(TRANSCRIPTS_PATH,first_name+".txt"),"r") as file:
                 raw_script=file.read()
             xml_tree=ET.parse(os.path.join(ALIGNED_PATH,file_name))
             xml_root = xml_tree.getroot()
-            gecko_json=xml_to_GeckoJSON(xml_root,raw_script)            
+            gecko_json=xml_to_GeckoJSON(xml_root,raw_script)
             json_path=os.path.join(ALIGNED_PATH,first_name+".json")
-            print("Writing file #{} to {}".format(file_counter,json_path),end="\r")        
+            print("Writing file #{} to {}".format(file_counter,json_path),end="\r")
             file_counter+=1
             with open(json_path,"w") as file:
                 json.dump(gecko_json,file)
-        #elif extension==".json":
-        #might be messy in the loop
-        #else:
-        #    raise ValueError("Expected file extension to be '.xml', got '{}' instead".format(extension))
-        
        
-
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
-    print("done anonymizing, you should now launch vrbs before converting")    
+    print("done anonymizing, you should now launch vrbs before converting")
     input("Press Enter when vrbs is done...")
     print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
     write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH)
@@ -175,4 +152,3 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH):
 
 if __name__ == '__main__':
     main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH)
-
