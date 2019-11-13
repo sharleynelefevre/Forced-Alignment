@@ -22,12 +22,13 @@ from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeat
 
 # # Hyperparameters
 
-SERIE_PATH=os.path.join("pyannote-db-plumcot","Plumcot","data","Friends")
+SERIE_URI="GameOfThrones"
+SERIE_PATH=os.path.join("/vol/work/lerner/pyannote-db-plumcot","Plumcot","data",SERIE_URI)
 TRANSCRIPTS_PATH=os.path.join(SERIE_PATH,"transcripts")
 ALIGNED_PATH=os.path.join(SERIE_PATH,"hard-alignment")
 SERIE_SPLIT={"test":[1],
             "dev":[2,3],
-            "train":[4,5,6,7,8,9,10]
+            "train":[4,5,6]
             }
 
 VRBS_CONFIDENCE_THRESHOLD=0.5#used in gecko_JSON_to_Annotation function
@@ -88,7 +89,7 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
             file_counter+=1
             with open(json_path,"w") as file:
                 json.dump(gecko_json,file)
-      SERIE_PATH=os.path.join("vol","work","lerner","pyannote-db-plumcot","Plumcot","data","Friends")
+    print()#new line for prettier print
 def append_to_rttm(file: TextIO,
                          output: Union[Timeline, Annotation]):
         """Write pipeline output to "rttm" file
