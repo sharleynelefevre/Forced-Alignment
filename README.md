@@ -24,30 +24,30 @@ Type "n" or "no" (case insensitive) if you don't want to.
 
 # Format
 ## XML (limsi)
-```
+```py
 AudioDoc  
-└───ProcList    0  
-│   ChannelList 1  
-│   SpeakerList 2  
-│   SegmentList 3  (list)  
-│   └───SpeechSegment (dict[attrib], list[Word])  
+└───ProcList    #0  
+│   ChannelList #1  
+│   SpeakerList #2  
+│   SegmentList #3  (list)  
+│   └───SpeechSegment #(dict[attrib], list[Word])  
 │   │   └───Word
-│   │   │   └───id (unique for all words, regardless of speechsegment)
-│   │   │   │   stime (start time in seconds)
-│   │   │   │   dur (duration in seconds)
-│   │   │   │   conf (confidence between 0 and 1)
-│   │   │   spkid (speaker id, could be used as name or vrbs_id)
+│   │   │   └───id #(unique for all words, regardless of speechsegment)
+│   │   │   │   stime #(start time in seconds)
+│   │   │   │   dur #(duration in seconds)
+│   │   │   │   conf #(confidence between 0 and 1)
+│   │   │   spkid #(speaker id, could be used as name or vrbs_id)
 ```
 
 ## JSON (Gecko)
 
-```
+```py
 Root
-└───monologues (list of speakers)
-│   └───monolog_0 (1st speech turn)
-│   │   └──speaker (1st speech turn's speaker)
-│   │   │  terms (list of terms)
-│   │   │   └──term_0 (1st speech turn's 1st term)
-│   │   │   │  └──start (1st speech turn's 1st term start time in SECONDS)
-│   │   │   │  │  confidence (1st speech turn's 1st term start confidence (between 0.0 and 1.0))
+└───monologues #(list of speakers)
+│   └───monolog_0 #(1st speech turn)
+│   │   └──speaker #(1st speech turn's speaker)
+│   │   │  terms #(list of terms)
+│   │   │   └──term_0 #(1st speech turn's 1st term)
+│   │   │   │  └──start #(1st speech turn's 1st term start time in SECONDS)
+│   │   │   │  │  confidence #(1st speech turn's 1st term start confidence (between 0.0 and 1.0))
 ```
