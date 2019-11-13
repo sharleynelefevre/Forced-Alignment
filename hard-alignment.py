@@ -197,6 +197,10 @@ def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFI
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
+    try:
+        os.mkdir(ALIGNED_PATH)
+    except FileExistsError as e:
+        print(e)
     print("done, you should now launch vrbs before converting")
     input("Press Enter when vrbs is done...")
     print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
