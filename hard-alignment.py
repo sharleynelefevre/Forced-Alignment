@@ -29,10 +29,11 @@ SERIE_SPLIT={"test":[1],
             "dev":[2,3],
             "train":[4,5,6,7,8,9,10]
             }
-ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"Friends_{}collar.rttm".format(HARD_ALIGNMENT_COLLAR))
-ANNOTATED_PATH=os.path.join(ALIGNED_PATH,"Friends_{}confidence.uem".format(VRBS_CONFIDENCE_THRESHOLD))
+
 VRBS_CONFIDENCE_THRESHOLD=0.5#used in gecko_JSON_to_Annotation function
 HARD_ALIGNMENT_COLLAR=0.15#used in gecko_JSON_to_Annotation function
+ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"{}_{}collar.rttm".format(SERIE_URI,HARD_ALIGNMENT_COLLAR))
+ANNOTATED_PATH=os.path.join(ALIGNED_PATH,"{}_{}confidence.uem".format(SERIE_URI,VRBS_CONFIDENCE_THRESHOLD))
 
 def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     """
