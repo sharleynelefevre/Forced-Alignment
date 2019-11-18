@@ -47,7 +47,7 @@ def xml_to_GeckoJSON(xml_root,raw_script):
                     "end" : float(word.attrib['stime'])+float(word.attrib['dur']),
                     "text" : word.text,
                     "type" : "WORD",
-                    "confidence": word.attrib['conf']
+                    "confidence": float(word.attrib['conf'])
                 })
     speaker={
     "name" : None,
@@ -93,6 +93,6 @@ def gecko_JSON_to_Annotation(gecko_JSON,uri=None,modality='speaker',confidence_t
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
                     annotation[Segment(term["start"],term["end"]),speaker_id]=speaker_id
-            if float(term["confidence"]) <= confidence_threshold:
+            if term["confidence"] <= confidence_threshold:
                 not_annotated.add(Segment(term["start"],term["end"]))
     return annotation.support(collar),not_annotated.gaps(support=Segment(0.0,term["end"]))
