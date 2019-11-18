@@ -11,7 +11,7 @@ from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeat
 def xml_to_GeckoJSON(xml_root,raw_script):
     """
     Parameters:
-        xml_root : root of the xml tree defined by vrbs for hard alignment. root[3] should be SegmentList, a list of speech segments
+        xml_root : root of the xml tree defined by vrbs for forced alignment. root[3] should be SegmentList, a list of speech segments
         raw_script : `str` : the script as defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
             Each line is a speech turn and the first (space-separated) token is the normalized speaker id.
     Returns:
@@ -70,7 +70,7 @@ def gecko_JSON_to_Annotation(gecko_JSON,uri=None,modality='speaker',confidence_t
     """
     Parameters:
     -----------
-    gecko_JSON : `dict` loaded from a Gecko-compliant JSON as defined in https://github.com/PaulLerner/Hard-Alignment
+    gecko_JSON : `dict` loaded from a Gecko-compliant JSON as defined in https://github.com/PaulLerner/Forced-Alignment
     uri (uniform resource identifier) : `str` which identifies the annotation (e.g. episode number)
         Default : None
     modality : `str` modality of the annotation as defined in https://github.com/pyannote/pyannote-core

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#$ -N hard-alignment
+#$ -N forced-alignment
 #$ -S /bin/bash
 #$ -o /vol/work/lerner/logs/output/
 #$ -e /vol/work/lerner/logs/error/
@@ -18,4 +18,4 @@ export VRBS_SID=$VRBS_ROOT/sid
 export PATH=$PATH:$VRBS_BIN
 export FILE_NAME=`head -n ${SGE_TASK_ID} $1 | tail -n 1`
 echo $FILE_NAME
-`which vrbs_align` -f /vol/work3/maurice/dvd_extracted/$2/$FILE_NAME.en48kHz.wav -o /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/$2/hard-alignment/$FILE_NAME.xml -p -qs -v /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/$2/transcripts/$FILE_NAME.brackets
+`which vrbs_align` -f /vol/work3/maurice/dvd_extracted/$2/$FILE_NAME.en48kHz.wav -o /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/$2/forced-alignment/$FILE_NAME.xml -p -qs -v /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/$2/transcripts/$FILE_NAME.brackets

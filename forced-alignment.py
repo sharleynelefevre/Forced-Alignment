@@ -25,15 +25,15 @@ from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeat
 SERIE_URI="GameOfThrones"
 SERIE_PATH=os.path.join("/vol/work/lerner/pyannote-db-plumcot","Plumcot","data",SERIE_URI)
 TRANSCRIPTS_PATH=os.path.join(SERIE_PATH,"transcripts")
-ALIGNED_PATH=os.path.join(SERIE_PATH,"hard-alignment")
+ALIGNED_PATH=os.path.join(SERIE_PATH,"forced-alignment")
 SERIE_SPLIT={"test":[1],
             "dev":[2,3],
             "train":[4,5,6]
             }
 
 VRBS_CONFIDENCE_THRESHOLD=0.5#used in gecko_JSON_to_Annotation function
-HARD_ALIGNMENT_COLLAR=0.15#used in gecko_JSON_to_Annotation function
-ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"{}_{}collar.rttm".format(SERIE_URI,HARD_ALIGNMENT_COLLAR))
+FORCED_ALIGNMENT_COLLAR=0.15#used in gecko_JSON_to_Annotation function
+ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"{}_{}collar.rttm".format(SERIE_URI,FORCED_ALIGNMENT_COLLAR))
 ANNOTATED_PATH=os.path.join(ALIGNED_PATH,"{}_{}confidence.uem".format(SERIE_URI,VRBS_CONFIDENCE_THRESHOLD))
 
 def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
@@ -137,11 +137,11 @@ def append_to_uem(file: TextIO,
             f'is not supported.'
         )
         raise NotImplementedError(msg)
-def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.0, HARD_ALIGNMENT_COLLAR=0.0):
+def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
-    Also adds annotated parts of the files to a UEM depending on HARD_ALIGNMENT_COLLAR.
+    Also adds annotated parts of the files to a UEM depending on FORCED_ALIGNMENT_COLLAR.
 
     Parameters:
     -----------
@@ -150,7 +150,7 @@ def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFI
     ANNOTATED_PATH : path where to store the annotated parts of the files in UEM.
     VRBS_CONFIDENCE_THRESHOLD : `float`, the segments with confidence under VRBS_CONFIDENCE_THRESHOLD won't be added to UEM file.
         Defaults to 0.0
-    HARD_ALIGNMENT_COLLAR: `float`, Merge tracks with same label and separated by less than `HARD_ALIGNMENT_COLLAR` seconds.
+    FORCED_ALIGNMENT_COLLAR: `float`, Merge tracks with same label and separated by less than `FORCED_ALIGNMENT_COLLAR` seconds.
         Defaults to 0.0
     """
     if os.path.exists(ANNOTATION_PATH):
@@ -170,7 +170,7 @@ def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFI
             #read file, convert to annotation and write rttm
             with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
                 gecko_JSON=json.load(file)
-            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,HARD_ALIGNMENT_COLLAR)
+            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR)
             with open(ANNOTATION_PATH,'a') as file:
                 append_to_rttm(file,annotation)
             with open(ANNOTATED_PATH,'a') as file:
@@ -194,7 +194,7 @@ def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFI
         file.write("\n".join(test_list))
     print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
 
-def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR):
+def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
     try:
@@ -208,9 +208,9 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
     answer=input("Would you like to convert annotations from gecko_JSON to RTTM ? [Y]/N")
     answer=answer.lower().strip()
     if answer != 'n' and answer != 'no':
-        gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR)
+        gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
     else:
         print("Okay, then you're done ;)")
 
 if __name__ == '__main__':
-    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, HARD_ALIGNMENT_COLLAR)
+    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)

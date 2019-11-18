@@ -1,11 +1,11 @@
-# Hard-Alignment
+# Forced-Alignment
 Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
 
-`hard-alignment.py` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
+`forced-alignment.py` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
 
-You should then launch `hard-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source. Usage :
+You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source. Usage :
 ```bash
-hard-alignment.sh /path/to/your/data/${SERIE_URI}/file_list.txt ${SERIE_URI}
+forced-alignment.sh /path/to/your/data/${SERIE_URI}/file_list.txt ${SERIE_URI}
 ```
 
 You can customize logs outputs directories directly in the file using
@@ -15,7 +15,7 @@ You can customize logs outputs directories directly in the file using
 #$ -e /path/to/logs/error/
 ```
 
-Once vrbs is done you can continue with `hard-alignment.py` (press `Enter`) which will transform the XML output of vrbs into [Gecko](https://github.com/gong-io/gecko) compliant-JSON. The file formats are described below. The script also removes speakers id from the transcript and puts them instead in a proper JSON attribute : `speaker["id"]`.
+Once vrbs is done you can continue with `forced-alignment.py` (press `Enter`) which will transform the XML output of vrbs into [Gecko](https://github.com/gong-io/gecko) compliant-JSON. The file formats are described below. The script also removes speakers id from the transcript and puts them instead in a proper JSON attribute : `speaker["id"]`.
 
 After that, you may or may not want to convert all the annotations from gecko_JSON to RTTM, this relies on pyannote.core
 Type "n" or "no" (case insensitive) if you don't want to.
