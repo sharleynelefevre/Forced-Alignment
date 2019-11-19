@@ -14,7 +14,7 @@ from typing import TextIO,Union
 import warnings
 
 #utils
-from utils import normalize_string
+from utils import normalize_string, do_this
 from convert import *
 
 #pyannote
@@ -22,7 +22,7 @@ from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeat
 
 # # Hyperparameters
 
-SERIE_URI="GameOfThrones"
+SERIE_URI="TheBigBangTheory"
 SERIE_PATH=os.path.join("/vol/work/lerner/pyannote-db-plumcot","Plumcot","data",SERIE_URI)
 TRANSCRIPTS_PATH=os.path.join(SERIE_PATH,"transcripts")
 ALIGNED_PATH=os.path.join(SERIE_PATH,"forced-alignment")
@@ -65,7 +65,8 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
             with open(anonymous_path,"w") as file:
                 file.write(bracket_raw_script)
             file_counter+=1
-
+    if file_counter==0:
+        raise ValueError(f"no txt files were found in {TRANSCRIPTS_PATH}")
     with open(os.path.join(SERIE_PATH,"file_list.txt"),"w") as file:
         file.write("\n".join(file_list)    )
     print("succesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
@@ -89,7 +90,10 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
             file_counter+=1
             with open(json_path,"w") as file:
                 json.dump(gecko_json,file)
+    if file_counter==0:
+        raise ValueError(f"no xml files were found in {ALIGNED_PATH}")
     print()#new line for prettier print
+
 def append_to_rttm(file: TextIO,
                          output: Union[Timeline, Annotation]):
         """Write pipeline output to "rttm" file
@@ -113,6 +117,7 @@ def append_to_rttm(file: TextIO,
             f'is not supported.'
         )
         raise NotImplementedError(msg)
+
 def append_to_uem(file: TextIO,
                          output: Timeline):
         """Write pipeline output to "uem" file
@@ -137,7 +142,25 @@ def append_to_uem(file: TextIO,
             f'is not supported.'
         )
         raise NotImplementedError(msg)
-def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
+
+def gecko_JSONs_to_aligned(ALIGNED_PATH):
+    file_counter=0
+    for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
+        uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
+        if extension==".json":
+            print("processing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="\r")
+            file_counter+=1
+            #read file, convert to annotation and write rttm
+            with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
+                gecko_JSON=json.load(file)
+            aligned=gecko_JSON_to_aligned(gecko_JSON,uri)
+            with open(os.path.join(ALIGNED_PATH,uri+".aligned"),'w') as file:
+                file.write(aligned)
+    if file_counter==0:
+        raise ValueError(f"no json files were found in {ALIGNED_PATH}")
+    print("\ndone ;)")
+
+def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
@@ -186,6 +209,8 @@ def gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFI
             else:
                 raise ValueError("Expected season_number to be in SERIE_SPLIT : {}\ngot {} instead".format(SERIE_SPLIT,season_number))
             file_counter+=1
+    if file_counter==0:
+        raise ValueError(f"no json files were found in {ALIGNED_PATH}")
     with open(os.path.join(SERIE_PATH,"train_list.lst"),"w") as file:
         file.write("\n".join(train_list))
     with open(os.path.join(SERIE_PATH,"dev_list.lst"),"w") as file:
@@ -205,12 +230,14 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
     input("Press Enter when vrbs is done...")
     print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
     write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH)
-    answer=input("Would you like to convert annotations from gecko_JSON to RTTM ? [Y]/N")
-    answer=answer.lower().strip()
-    if answer != 'n' and answer != 'no':
-        gecko_JSON_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
+    if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
+        gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
     else:
-        print("Okay, then you're done ;)")
+        print("Okay, no hard feelings")
+    if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
+        gecko_JSONs_to_aligned(ALIGNED_PATH)
+    else:
+        print("Okay then you're done ;)")
 
 if __name__ == '__main__':
     main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)

@@ -23,7 +23,7 @@ Type "n" or "no" (case insensitive) if you don't want to.
 *You're done !*
 
 # Format
-## XML (limsi)
+## XML (VRBS)
 ```py
 AudioDoc  
 └───ProcList    #0  
@@ -50,4 +50,21 @@ Root
 │   │   │   └──term_0 #(1st speech turn's 1st term)
 │   │   │   │  └──start #(1st speech turn's 1st term start time in SECONDS)
 │   │   │   │  │  confidence #(1st speech turn's 1st term start confidence (between 0.0 and 1.0))
+│   │   │   │  │  text #str: content of the word
+```
+
+## Aligned (LIMSI)
+Inspired by [`stm`](http://www1.icsi.berkeley.edu/Speech/docs/sctk-1.2/infmts.htm#stm_fmt_name_0) the `aligned` format provides additionally the confidence of the model in the transcription :
+
+```
+<file_uri> <speaker_id> <start_time> <end_time> <token> <confidence_score>
+```
+e.g. :
+```
+TheBigBangTheory.Season01.Episode01 sheldon_cooper start_time end_time How 0.9
+TheBigBangTheory.Season01.Episode01 sheldon_cooper start_time end_time are 0.6
+TheBigBangTheory.Season01.Episode01 sheldon_cooper start_time end_time you 0.8
+TheBigBangTheory.Season01.Episode01 sheldon_cooper start_time end_time , 0.1
+TheBigBangTheory.Season01.Episode01 sheldon_cooper start_time end_time Leonard 0.5
+TheBigBangTheory.Season01.Episode01 sheldon_cooper start_time end_time ? 0.2
 ```

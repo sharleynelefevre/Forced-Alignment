@@ -66,11 +66,34 @@ def xml_to_GeckoJSON(xml_root,raw_script):
 
     return gecko_json
 
+def gecko_JSON_to_aligned(gecko_JSON,uri=None):
+    """
+    Parameters:
+    -----------
+    gecko_JSON : `dict` loaded from a Gecko-compliant JSON as defined in xml_to_GeckoJSON
+    uri (uniform resource identifier) : `str` which identifies the annotation (e.g. episode number)
+        Default : None
+
+    Returns:
+    --------
+    aligned: `str`: as defined in README one file per space-separated token.
+        <file_uri> <speaker_id> <start_time> <end_time> <token> <confidence_score>
+    """
+    aligned=""
+    for monolog in gecko_JSON["monologues"]:
+        speaker_ids=monolog["speaker"]["id"].split("@")#defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
+
+        for i,term in enumerate(monolog["terms"]):
+            for speaker_id in speaker_ids:#most of the time there's only one
+                if speaker_id!='':#happens with "all@"
+                    aligned+=f'{uri} {speaker_id} {term["start"]} {term["end"]} {term["text"].strip()} {term["confidence"]}\n'
+    return aligned
+
 def gecko_JSON_to_Annotation(gecko_JSON,uri=None,modality='speaker',confidence_threshold=0.0,collar=0.0):
     """
     Parameters:
     -----------
-    gecko_JSON : `dict` loaded from a Gecko-compliant JSON as defined in https://github.com/PaulLerner/Forced-Alignment
+    gecko_JSON : `dict` loaded from a Gecko-compliant JSON as defined in xml_to_GeckoJSON
     uri (uniform resource identifier) : `str` which identifies the annotation (e.g. episode number)
         Default : None
     modality : `str` modality of the annotation as defined in https://github.com/pyannote/pyannote-core
