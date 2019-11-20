@@ -22,7 +22,7 @@ from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeat
 
 # # Hyperparameters
 
-SERIE_URI="TheBigBangTheory"
+SERIE_URI="GameOfThrones"
 SERIE_PATH=os.path.join("/vol/work/lerner/pyannote-db-plumcot","Plumcot","data",SERIE_URI)
 TRANSCRIPTS_PATH=os.path.join(SERIE_PATH,"transcripts")
 ALIGNED_PATH=os.path.join(SERIE_PATH,"forced-alignment")
@@ -30,7 +30,7 @@ SERIE_SPLIT={"test":[1],
             "dev":[2,3],
             "train":[4,5,6]
             }
-
+EXPECTED_MIN_SPEECH_TIME=200.0
 VRBS_CONFIDENCE_THRESHOLD=0.5#used in gecko_JSON_to_Annotation function
 FORCED_ALIGNMENT_COLLAR=0.15#used in gecko_JSON_to_Annotation function
 ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"{}_{}collar.rttm".format(SERIE_URI,FORCED_ALIGNMENT_COLLAR))
@@ -193,7 +193,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONF
             #read file, convert to annotation and write rttm
             with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
                 gecko_JSON=json.load(file)
-            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR)
+            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME)
             with open(ANNOTATION_PATH,'a') as file:
                 append_to_rttm(file,annotation)
             with open(ANNOTATED_PATH,'a') as file:
@@ -219,7 +219,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONF
         file.write("\n".join(test_list))
     print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
 
-def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR):
+def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
     try:
@@ -240,4 +240,4 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
         print("Okay then you're done ;)")
 
 if __name__ == '__main__':
-    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
+    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME)
