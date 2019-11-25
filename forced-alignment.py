@@ -61,7 +61,7 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
 
             #writes back anonymized script .anonymous
             anonymous_path=os.path.join(TRANSCRIPTS_PATH,first_name+".brackets")
-            print("Writing file #{} to {}".format(file_counter,anonymous_path),end="\r")
+            print("\rWriting file #{} to {}".format(file_counter,anonymous_path),end="")
             with open(anonymous_path,"w") as file:
                 file.write(bracket_raw_script)
             file_counter+=1
@@ -86,7 +86,7 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
             xml_root = xml_tree.getroot()
             gecko_json=xml_to_GeckoJSON(xml_root,raw_script)
             json_path=os.path.join(ALIGNED_PATH,first_name+".json")
-            print("Writing file #{} to {}".format(file_counter,json_path),end="\r")
+            print("\rWriting file #{} to {}".format(file_counter,json_path),end="")
             file_counter+=1
             with open(json_path,"w") as file:
                 json.dump(gecko_json,file)
@@ -148,7 +148,7 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
     for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
         uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
         if extension==".json":
-            print("processing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="\r")
+            print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
             file_counter+=1
             #read file, convert to annotation and write rttm
             with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
@@ -189,7 +189,7 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONF
     for i,file_name in enumerate(sorted(os.listdir(ALIGNED_PATH))):
         uri,extension=os.path.splitext(file_name)#uri should be common to xml and txt file
         if extension==".json":
-            print("processing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="\r")
+            print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
             #read file, convert to annotation and write rttm
             with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
                 gecko_JSON=json.load(file)
