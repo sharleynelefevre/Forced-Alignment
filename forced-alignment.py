@@ -94,8 +94,7 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
         raise ValueError(f"no xml files were found in {ALIGNED_PATH}")
     print()#new line for prettier print
 
-def append_to_rttm(file: TextIO,
-                         output: Union[Timeline, Annotation]):
+def append_to_rttm(file: TextIO, output: Union[Timeline, Annotation]):
         """Write pipeline output to "rttm" file
         Parameters
         ----------
@@ -103,6 +102,7 @@ def append_to_rttm(file: TextIO,
         output : `pyannote.core.Annotation`
             Pipeline output
         """
+        warnings.warn("deprecated in favor of Annotation.write_rttm")
         if isinstance(output, Annotation):
             for s, t, l in output.itertracks(yield_label=True):
                 line = (
@@ -127,6 +127,7 @@ def append_to_uem(file: TextIO,
         output : `pyannote.core.Timeline`
             Pipeline output
         """
+        warnings.warn("deprecated in favor of Timeline.write_uem")
         if isinstance(output, Timeline):
             for segment in output:
                 line = "{} 1 {} {}\n".format(
@@ -138,7 +139,7 @@ def append_to_uem(file: TextIO,
             return
 
         msg = (
-            f'Dumping {output.__class__.__name__} instances to "rttm" files '
+            f'Dumping {output.__class__.__name__} instances to "uem" files '
             f'is not supported.'
         )
         raise NotImplementedError(msg)
@@ -195,9 +196,9 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONF
                 gecko_JSON=json.load(file)
             annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME)
             with open(ANNOTATION_PATH,'a') as file:
-                append_to_rttm(file,annotation)
+                annotation.write_rttm(file)
             with open(ANNOTATED_PATH,'a') as file:
-                append_to_uem(file,annotated)
+                annotated.write_uem(file)
             #train dev or test ?
             season_number=int(re.findall(r'\d+', file_name.split(".")[1])[0])
             if season_number in SERIE_SPLIT["test"]:
