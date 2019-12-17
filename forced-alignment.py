@@ -258,7 +258,7 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    
+
     serie_uri=args["<serie_uri>"]
     plumcot_path=args["<plumcot_path>"]
     SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
@@ -273,4 +273,4 @@ if __name__ == '__main__':
     ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
     ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
 
-    main(serie_path,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+    main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
