@@ -38,6 +38,9 @@ e.g. :
 ./forced-alignment.py Friends /vol/work/lerner/pyannote-db-plumcot \
 1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15
 ```
+
+*About `<serie_split>`* : The test set should always be the first season, the dev set might be season 2 or 2 and 3 depending on the data size.
+
 You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source.
 You can customize logs outputs directories directly in the file using
 
