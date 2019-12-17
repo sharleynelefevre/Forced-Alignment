@@ -39,14 +39,14 @@ ANNOTATED_PATH=os.path.join(ALIGNED_PATH,"{}_{}confidence.uem".format(SERIE_URI,
 def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     """
     Puts brackets around the [speaker_id] (first token of each line of the script) in the scripts
-    Also writes a file with all the file names in SERIE_PATH/file_list.txt
+    Also writes a file with all the file uris in SERIE_PATH/file_list.txt
     """
     file_counter=0
     file_list=[]
     for file_name in os.listdir(TRANSCRIPTS_PATH):
-        first_name,extension=os.path.splitext(file_name)
+        file_uri,extension=os.path.splitext(file_name)
         if extension==".txt":
-            file_list.append(first_name)#keep a list for qsub on m107
+            file_list.append(file_uri)#keep a list for qsub on m107
 
             #open file
             with open(os.path.join(TRANSCRIPTS_PATH,file_name),"r") as file:
@@ -60,7 +60,7 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
                     bracket_raw_script+="["+speech_turn[:first_space]+"]"+speech_turn[first_space:]+"\n"
 
             #writes back anonymized script .anonymous
-            anonymous_path=os.path.join(TRANSCRIPTS_PATH,first_name+".brackets")
+            anonymous_path=os.path.join(TRANSCRIPTS_PATH,file_uri+".brackets")
             print("\rWriting file #{} to {}".format(file_counter,anonymous_path),end="")
             with open(anonymous_path,"w") as file:
                 file.write(bracket_raw_script)
@@ -78,14 +78,14 @@ def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
     """
     file_counter=0
     for file_name in os.listdir(ALIGNED_PATH):
-        first_name,extension=os.path.splitext(file_name)#first_name should be common to xml and txt file
+        file_uri,extension=os.path.splitext(file_name)#file_uri should be common to xml and txt file
         if extension==".xml":
-            with open(os.path.join(TRANSCRIPTS_PATH,first_name+".txt"),"r") as file:
+            with open(os.path.join(TRANSCRIPTS_PATH,file_uri+".txt"),"r") as file:
                 raw_script=file.read()
             xml_tree=ET.parse(os.path.join(ALIGNED_PATH,file_name))
             xml_root = xml_tree.getroot()
             gecko_json=xml_to_GeckoJSON(xml_root,raw_script)
-            json_path=os.path.join(ALIGNED_PATH,first_name+".json")
+            json_path=os.path.join(ALIGNED_PATH,file_uri+".json")
             print("\rWriting file #{} to {}".format(file_counter,json_path),end="")
             file_counter+=1
             with open(json_path,"w") as file:
