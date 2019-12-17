@@ -1,7 +1,39 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""
+Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
+
+Usage:
+    forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
+    forced-alignment.py -h | --help
+
+Arguments:
+    <serie_uri>                             One of Plumcot/data/series.txt
+    <plumcot_path>                          something like /path/to/pyannote-db-plumcot
+    <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
+                                            are seasons number separated by '-' that should be in the data subset
+                                            e.g. : 1,2-3,4-5-6-7-8-9-10
+
+Options:
+    --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
+    --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
+    --expected_time=<expected_time>         `float`, Optional.
+                                            Threshold (in seconds) under which the total duration of speech time
+                                            is suspicious (warns the user).
+                                            Defaults to never suspect anything (i.e. +infinity)
+                                            Recommended : 200.0
+    --conf_threshold=<conf_threshold>       `float`, the segments with confidence under `conf_threshold`
+                                            won't be added to UEM file.
+                                            Defaults to 0.0
+                                            Recommended : 0.5
+    --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
+                                            Defaults to 0.0
+                                            Recommended : 0.15
+"""
 
 # # Dependencies
+
+from docopt import docopt
 
 #I/O
 import json
@@ -19,22 +51,6 @@ from convert import *
 
 #pyannote
 from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeature,SlidingWindow
-
-# # Hyperparameters
-
-SERIE_URI="GameOfThrones"
-SERIE_PATH=os.path.join("/vol/work/lerner/pyannote-db-plumcot","Plumcot","data",SERIE_URI)
-TRANSCRIPTS_PATH=os.path.join(SERIE_PATH,"transcripts")
-ALIGNED_PATH=os.path.join(SERIE_PATH,"forced-alignment")
-SERIE_SPLIT={"test":[1],
-            "dev":[2,3],
-            "train":[4,5,6]
-            }
-EXPECTED_MIN_SPEECH_TIME=200.0
-VRBS_CONFIDENCE_THRESHOLD=0.5#used in gecko_JSON_to_Annotation function
-FORCED_ALIGNMENT_COLLAR=0.15#used in gecko_JSON_to_Annotation function
-ANNOTATION_PATH=os.path.join(ALIGNED_PATH,"{}_{}collar.rttm".format(SERIE_URI,FORCED_ALIGNMENT_COLLAR))
-ANNOTATED_PATH=os.path.join(ALIGNED_PATH,"{}_{}confidence.uem".format(SERIE_URI,VRBS_CONFIDENCE_THRESHOLD))
 
 def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     """
@@ -241,4 +257,20 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
         print("Okay then you're done ;)")
 
 if __name__ == '__main__':
-    main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH,ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME)
+    args = docopt(__doc__)
+    
+    serie_uri=args["<serie_uri>"]
+    plumcot_path=args["<plumcot_path>"]
+    SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
+    transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
+    aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
+    serie_split={}
+    for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
+        serie_split[key]=list(map(int,set.split("-")))
+    expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
+    vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
+    forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
+    ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
+    ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
+
+    main(serie_path,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
