@@ -35,6 +35,8 @@ Options:
     --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
                                             Defaults to 0.0
                                             Recommended : 0.15
+    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa. Defaults to not checking.
 """
 
 # # Dependencies
@@ -256,9 +258,11 @@ def check_files(SERIE_PATH,wav_path):
         warnings.warn(f'{wav_uris - file_list} are not in {SERIE_PATH}')
 
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-    VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
+    VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME,wav_path=None):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
+    if wav_path:
+        check_files(SERIE_PATH,wav_path)
     if not os.path.exists(ALIGNED_PATH):
         os.mkdir(ALIGNED_PATH)
     print("done, you should now launch vrbs before converting")
@@ -296,6 +300,6 @@ if __name__ == '__main__':
         forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
         ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
         ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
-
+        wav_path=os.path.join(args["--wav_path"],serie_uri) if args["--wav_path"] else None
         main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-            vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+            vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time,wav_path)
