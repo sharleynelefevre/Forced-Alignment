@@ -177,7 +177,8 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
     print("\ndone ;)")
 
-def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
+def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
+    VRBS_CONFIDENCE_THRESHOLD =0.0, FORCED_ALIGNMENT_COLLAR=0.0):
     """
     Converts gecko_JSON files to RTTM using pyannote `Annotation`.
     Also keeps a track of files in train, dev and test sets.
@@ -217,14 +218,14 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONF
                 annotated.write_uem(file)
             #train dev or test ?
             season_number=int(re.findall(r'\d+', file_name.split(".")[1])[0])
-            if season_number in SERIE_SPLIT["test"]:
+            if season_number in serie_split["test"]:
                 test_list.append(uri)
-            elif season_number in SERIE_SPLIT["dev"]:
+            elif season_number in serie_split["dev"]:
                 dev_list.append(uri)
-            elif season_number in SERIE_SPLIT["train"]:
+            elif season_number in serie_split["train"]:
                 train_list.append(uri)
             else:
-                raise ValueError("Expected season_number to be in SERIE_SPLIT : {}\ngot {} instead".format(SERIE_SPLIT,season_number))
+                raise ValueError("Expected season_number to be in {}\ngot {} instead".format(serie_split,season_number))
             file_counter+=1
     if file_counter==0:
         raise ValueError(f"no json files were found in {ALIGNED_PATH}")
@@ -236,7 +237,8 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONF
         file.write("\n".join(test_list))
     print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
 
-def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
+def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
+    VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
     try:
@@ -248,7 +250,8 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
     print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
     write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH)
     if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
-        gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
+        gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
+         VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
     else:
         print("Okay, no hard feelings")
     if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
@@ -273,4 +276,5 @@ if __name__ == '__main__':
     ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
     ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
 
-    main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+    main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
+        vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
