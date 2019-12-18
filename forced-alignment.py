@@ -244,19 +244,16 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
 def check_files(SERIE_PATH,wav_path):
     with open(os.path.join(SERIE_PATH,"file_list.txt"),'r') as file:
         file_list=set(file.read().split("\n"))
-    #print(file_list)
     wav_uris=[]
     for file_name in sorted(os.listdir(wav_path)):
         uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
         if extension == '.en48kHz':
             wav_uris.append(uri)
-            if uri not in file_list:
-                warnings.warn(f'{uri} is not in {SERIE_PATH}')
     wav_uris=set(wav_uris)
-    #print(wav_uris)
-    for uri in file_list:
-        if uri not in wav_uris:
-            warnings.warn(f'{uri} is not in {wav_path}')
+    if file_list - wav_uris:
+        warnings.warn(f'{file_list - wav_uris} are not in {wav_path}')
+    if wav_uris - file_list:
+        warnings.warn(f'{wav_uris - file_list} are not in {SERIE_PATH}')
 
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
     VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
