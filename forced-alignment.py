@@ -239,10 +239,8 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
     VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
-    try:
+    if not os.path.exists(ALIGNED_PATH):
         os.mkdir(ALIGNED_PATH)
-    except FileExistsError as e:
-        print(e)
     print("done, you should now launch vrbs before converting")
     input("Press Enter when vrbs is done...")
     print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
