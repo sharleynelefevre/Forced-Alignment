@@ -5,6 +5,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 
 Usage:
     forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
+    forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
     forced-alignment.py -h | --help
 
 Arguments:
@@ -13,6 +14,11 @@ Arguments:
     <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
                                             are seasons number separated by '-' that should be in the data subset
                                             e.g. : 1,2-3,4-5-6-7-8-9-10
+    check_files                             Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa
+    <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
+                                            should contain a folder named <serie_uri>
+                                            itself containg plenty of wav files
 
 Options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
@@ -235,6 +241,21 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
         file.write("\n".join(test_list))
     print("\nDone, succefully wrote the rttm file to {}\n and the uem file to {}".format(ANNOTATION_PATH,ANNOTATED_PATH))
 
+def check_files(SERIE_PATH,wav_path):
+    with open(os.path.join(SERIE_PATH,"file_list.txt"),'r') as file:
+        file_list=set(file.readlines())
+    wav_uris=[]
+    for file_name in os.listdir(wav_path):
+        uri,extension=os.path.splitext(os.path.splitext(file_name)[0])
+        if extension == 'en48kHz':
+            wav_uris.append(uri)
+            if uri not in file_list:
+                warnings.warn(f'{uri} is not in {SERIE_PATH}')
+    wav_uris=set(wav_uris)
+    for uri in file_list:
+        if uri not in wav_uris:
+            warnings.warn(f'{uri} is not in {wav_path}')
+
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
     VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
     print("adding brackets around speakers id")
@@ -263,14 +284,19 @@ if __name__ == '__main__':
     SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
     transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
     aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
-    serie_split={}
-    for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
-        serie_split[key]=list(map(int,set.split("-")))
-    expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
-    vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
-    forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
-    ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
-    ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
 
-    main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-        vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+    if args['check_files']:
+        wav_path=os.path.join(args["<wav_path>"],serie_uri)
+        check_files(SERIE_PATH,wav_path)
+    else:
+        serie_split={}
+        for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
+            serie_split[key]=list(map(int,set.split("-")))
+        expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
+        vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
+        forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
+        ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
+        ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
+
+        main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
+            vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
