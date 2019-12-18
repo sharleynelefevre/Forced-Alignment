@@ -134,31 +134,30 @@ def append_to_rttm(file: TextIO, output: Union[Timeline, Annotation]):
         )
         raise NotImplementedError(msg)
 
-def append_to_uem(file: TextIO,
-                         output: Timeline):
-        """Write pipeline output to "uem" file
-        Parameters
-        ----------
-        file : file object
-        output : `pyannote.core.Timeline`
-            Pipeline output
-        """
-        warnings.warn("deprecated in favor of Timeline.write_uem")
-        if isinstance(output, Timeline):
-            for segment in output:
-                line = "{} 1 {} {}\n".format(
-                    output.uri,
-                    segment.start,
-                    segment.end
-                    )
-                file.write(line)
-            return
+def append_to_uem(file: TextIO, output: Timeline):
+    """Write pipeline output to "uem" file
+    Parameters
+    ----------
+    file : file object
+    output : `pyannote.core.Timeline`
+        Pipeline output
+    """
+    warnings.warn("deprecated in favor of Timeline.write_uem")
+    if isinstance(output, Timeline):
+        for segment in output:
+            line = "{} 1 {} {}\n".format(
+                output.uri,
+                segment.start,
+                segment.end
+                )
+            file.write(line)
+        return
 
-        msg = (
-            f'Dumping {output.__class__.__name__} instances to "uem" files '
-            f'is not supported.'
-        )
-        raise NotImplementedError(msg)
+    msg = (
+        f'Dumping {output.__class__.__name__} instances to "uem" files '
+        f'is not supported.'
+    )
+    raise NotImplementedError(msg)
 
 def gecko_JSONs_to_aligned(ALIGNED_PATH):
     file_counter=0
@@ -167,7 +166,6 @@ def gecko_JSONs_to_aligned(ALIGNED_PATH):
         if extension==".json":
             print("\rprocessing file #{} from {}".format(file_counter,os.path.join(ALIGNED_PATH,file_name)),end="")
             file_counter+=1
-            #read file, convert to annotation and write rttm
             with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
                 gecko_JSON=json.load(file)
             aligned=gecko_JSON_to_aligned(gecko_JSON,uri)
