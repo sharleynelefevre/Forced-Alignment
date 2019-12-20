@@ -1,12 +1,9 @@
 # Forced-Alignment
 Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
 
-`forced-alignment.py` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
-
+## Main
 
 ```
-Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
-
 Usage:
     forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
     forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
@@ -43,6 +40,9 @@ Options:
                                             and vice-versa. Defaults to not checking.
 ```
 
+### Preprocessing
+`forced-alignment.py` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
+
 e.g. :
 ```bash
 ./forced-alignment.py Friends /vol/work/lerner/pyannote-db-plumcot \
@@ -51,6 +51,8 @@ e.g. :
 ```
 
 *About `<serie_split>`* : The test set should always be the first season, the dev set might be season 2 or 2 and 3 depending on the data size.
+
+### Actual forced-alignment - VRBS
 
 You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source.
 You can customize logs outputs directories directly in the file using
@@ -80,6 +82,23 @@ Type "n" or "no" (case insensitive) if you don't want to.
 
 *You're done !*
 
+## Post-processing
+
+If you plan on correcting the errors of the forced-alignment using gecko, you might want to use the `region_split` usage before-hand. So that the segment timings are more accurate.
+
+```
+Usage:
+    forced-alignment.py split_regions <file_path> [--threshold]
+    forced-alignment.py -h | --help
+
+split_regions options:
+    <file_path>                             Absolute path to the gecko-json file you want to preprocess
+    --threshold                             Duration of the silence (s) between two words so the region is split
+```
+
+e.g. :
+
+`./forced-alignment.py split_regions /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/Friends/forced-alignment/Friends.Season01.Episode01.json`
 # Format
 ## XML (VRBS)
 ```py
