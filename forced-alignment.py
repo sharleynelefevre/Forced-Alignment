@@ -6,6 +6,7 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 Usage:
     forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
     forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
+    forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py -h | --help
 
 Arguments:
@@ -35,6 +36,11 @@ Options:
     --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
                                             Defaults to 0.0
                                             Recommended : 0.15
+
+split_regions options:
+    <file_path>                             Absolute path to the gecko-json file you want to preprocess
+    --threshold                             Duration of the silence (s) between two words so the region is split
+                                            Defaults to 0.15 seconds.
 """
 
 # # Dependencies
@@ -255,6 +261,29 @@ def check_files(SERIE_PATH,wav_path):
     if wav_uris - file_list:
         warnings.warn(f'{wav_uris - file_list} are not in {SERIE_PATH}')
 
+def split_regions(file_path,threshold):
+    with open(file_path,'r') as file:
+        gecko_json=json.load(file)
+    for i, monologue in enumerate(gecko_json['monologues']):
+        terms=monologue["terms"]
+        for j, term in enumerate(terms):
+            if j+1 < len(terms):#next term exists
+                if terms[j+1]['start']-term['end']>threshold:
+                    #split monologue in two
+                    new_monologue={
+                        "speaker":monologue["speaker"],
+                        "terms":terms[j+1:]
+                    }
+                    gecko_json['monologues'][i]["terms"]=terms[:j+1]
+                    gecko_json['monologues'].insert(i+1,new_monologue)
+                    break
+    dir_path,file_name=os.path.split(file_path)
+    file_uri,_=os.path.splitext(file_name)
+    new_path=os.path.join(dir_path,f'{file_uri}.{threshold}.json')
+    with open(new_path,'w') as file:
+        json.dump(gecko_json,file)
+    print(f"succesfully dumped {new_path}")
+
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
     VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
     print("adding brackets around speakers id")
@@ -277,25 +306,29 @@ def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PA
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-
-    serie_uri=args["<serie_uri>"]
-    plumcot_path=args["<plumcot_path>"]
-    SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
-    transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
-    aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
-
-    if args['check_files']:
-        wav_path=os.path.join(args["<wav_path>"],serie_uri)
-        check_files(SERIE_PATH,wav_path)
+    if args['split_regions']:
+        file_path=args['<file_path>']
+        threshold=float(args["--threshold"]) if args["--threshold"] else 0.15
+        split_regions(file_path,threshold)
     else:
-        serie_split={}
-        for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
-            serie_split[key]=list(map(int,set.split("-")))
-        expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
-        vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
-        forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
-        ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
-        ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
+        serie_uri=args["<serie_uri>"]
+        plumcot_path=args["<plumcot_path>"]
+        SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
+        transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
+        aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
 
-        main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-            vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+        if args['check_files']:
+            wav_path=os.path.join(args["<wav_path>"],serie_uri)
+            check_files(SERIE_PATH,wav_path)
+        else:
+            serie_split={}
+            for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
+                serie_split[key]=list(map(int,set.split("-")))
+            expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
+            vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
+            forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
+            ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
+            ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
+
+            main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
+                vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
