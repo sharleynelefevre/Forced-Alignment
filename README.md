@@ -5,8 +5,11 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 
 
 ```
+Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
+
 Usage:
     forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
+    forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
     forced-alignment.py -h | --help
 
 Arguments:
@@ -15,6 +18,11 @@ Arguments:
     <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
                                             are seasons number separated by '-' that should be in the data subset
                                             e.g. : 1,2-3,4-5-6-7-8-9-10
+    check_files                             Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa
+    <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
+                                            should contain a folder named <serie_uri>
+                                            itself containg plenty of wav files
 
 Options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
@@ -31,12 +39,15 @@ Options:
     --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
                                             Defaults to 0.0
                                             Recommended : 0.15
+    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa. Defaults to not checking.
 ```
 
 e.g. :
 ```bash
 ./forced-alignment.py Friends /vol/work/lerner/pyannote-db-plumcot \
-1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15
+1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15 \
+--wav_path=/vol/work3/maurice/dvd_extracted
 ```
 
 *About `<serie_split>`* : The test set should always be the first season, the dev set might be season 2 or 2 and 3 depending on the data size.

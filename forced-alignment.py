@@ -36,6 +36,8 @@ Options:
     --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
                                             Defaults to 0.0
                                             Recommended : 0.15
+    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa. Defaults to not checking.
 
 split_regions options:
     <file_path>                             Absolute path to the gecko-json file you want to preprocess
@@ -285,9 +287,11 @@ def split_regions(file_path,threshold):
     print(f"succesfully dumped {new_path}")
 
 def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-    VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME):
+    VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME,wav_path=None):
     print("adding brackets around speakers id")
     write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
+    if wav_path:
+        check_files(SERIE_PATH,wav_path)
     if not os.path.exists(ALIGNED_PATH):
         os.mkdir(ALIGNED_PATH)
     print("done, you should now launch vrbs before converting")
