@@ -66,17 +66,20 @@ def xml_to_GeckoJSON(xml_root,raw_script):
 
     return gecko_json
 
-def gecko_JSON_to_aligned(gecko_JSON,uri=None):
+def gecko_JSON_to_aligned(gecko_JSON, uri=None):
     """
     Parameters:
     -----------
-    gecko_JSON : `dict` loaded from a Gecko-compliant JSON as defined in xml_to_GeckoJSON
-    uri (uniform resource identifier) : `str` which identifies the annotation (e.g. episode number)
-        Default : None
+    gecko_JSON : `dict`
+        loaded from a Gecko-compliant JSON as defined in xml_to_GeckoJSON
+    uri (uniform resource identifier) : `str`
+        which identifies the annotation (e.g. episode number)
+        Defaults to None.
 
     Returns:
     --------
-    aligned: `str`: as defined in README one file per space-separated token.
+    aligned: `str`
+        as defined in README one file per space-separated token.
         <file_uri> <speaker_id> <start_time> <end_time> <token> <confidence_score>
     """
     aligned=""
