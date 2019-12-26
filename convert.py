@@ -89,7 +89,7 @@ def gecko_JSON_to_aligned(gecko_JSON, uri=None):
         for i,term in enumerate(monologue["terms"]):
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
-                    aligned+=f'{uri} {speaker_id} {term["start"]} {term["end"]} {term["text"].strip()} {term["confidence"]}\n'
+                    aligned+=f'{uri} {speaker_id} {term["start"]} {term["end"]} {term["text"].strip()} {term.get("confidence")}\n'
     return aligned
 
 def gecko_JSON_to_Annotation(gecko_JSON, uri=None, modality='speaker',
