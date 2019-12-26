@@ -134,15 +134,14 @@ Arguments:
 
 ```
 Usage:
-    forced-alignment.py update_aligned <aligned_path> <json_path>
+    forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
     forced-alignment.py -h | --help
 
 Arguments:
-    <json_path>                             Path to the manually corrected, gecko-compliant json
     <aligned_path>                          Output of postprocess
+    <json_path>                             Path to the manually corrected, gecko-compliant json
+    <file_uri>                              uri of the file you corrected (should match aligned_path)
 ```
-
-Not Implemented
 
 # Format
 ## XML (VRBS)
