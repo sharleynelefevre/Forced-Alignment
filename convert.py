@@ -54,14 +54,14 @@ def xml_to_GeckoJSON(xml_root,raw_script):
     "id" : current_speaker,#first and last charcater should be []
     "vrbs_id" : speech_segment.attrib['spkid']
         }
-    new_monolog={
+    new_monologue={
             "speaker":speaker,
             "terms":terms
             }
     if json_i<len(gecko_json["monologues"]):
-        gecko_json["monologues"][json_i]=new_monolog
+        gecko_json["monologues"][json_i]=new_monologue
     else:
-        gecko_json["monologues"].append(new_monolog)
+        gecko_json["monologues"].append(new_monologue)
     gecko_json["monologues"].pop(0)
 
     return gecko_json
@@ -80,10 +80,10 @@ def gecko_JSON_to_aligned(gecko_JSON,uri=None):
         <file_uri> <speaker_id> <start_time> <end_time> <token> <confidence_score>
     """
     aligned=""
-    for monolog in gecko_JSON["monologues"]:
-        speaker_ids=monolog["speaker"]["id"].split("@")#defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
+    for monologue in gecko_JSON["monologues"]:
+        speaker_ids=monologue["speaker"]["id"].split("@")#defined in https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt
 
-        for i,term in enumerate(monolog["terms"]):
+        for i,term in enumerate(monologue["terms"]):
             for speaker_id in speaker_ids:#most of the time there's only one
                 if speaker_id!='':#happens with "all@"
                     aligned+=f'{uri} {speaker_id} {term["start"]} {term["end"]} {term["text"].strip()} {term["confidence"]}\n'
