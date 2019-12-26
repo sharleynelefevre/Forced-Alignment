@@ -9,7 +9,7 @@ Usage:
     forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
     forced-alignment.py split_regions <file_path> [--threshold]
     forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
-    forced-alignment.py update_aligned <aligned_path> <json_path>
+    forced-alignment.py update_aligned <aligned_path> <json_path> <file_uri>
     forced-alignment.py -h | --help
 
 Arguments:
@@ -305,7 +305,7 @@ def update_RTTM(rttm_path, uem_path, json_path, file_uri):
     rttm=load_rttm(rttm_path)
     print("loading UEM...")
     uem=load_uem(uem_path)
-    
+
     with open(json_path, 'r') as file:
         gecko_JSON=json.load(file)
     annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker', manual=True)
@@ -320,6 +320,16 @@ def update_RTTM(rttm_path, uem_path, json_path, file_uri):
         for annotated in uem.values():
             annotated.write_uem(file)
     print(f"succesfully dumped {rttm_path} and {uem_path}")
+
+def update_aligned(aligned_path, json_path, file_uri):
+    if file_uri not in json_path:
+        warnings.warn(f"replacing {aligned_path} by {json_path}")
+    with open(json_path, 'r') as file:
+        gecko_JSON=json.load(file)
+    aligned=gecko_JSON_to_aligned(gecko_JSON,file_uri)
+    with open(aligned_path,'w') as file:
+        file.write(aligned)
+    print(f"succesfully dumped {aligned_path}")
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -336,7 +346,8 @@ if __name__ == '__main__':
     elif args['update_aligned']:
         aligned_path=args['<aligned_path>']
         json_path=args['<json_path>']
-        raise NotImplementedError()
+        file_uri=args['<file_uri>']
+        update_aligned(aligned_path, json_path, file_uri)
     else:
         serie_uri=args["<serie_uri>"]
         plumcot_path=args["<plumcot_path>"]
