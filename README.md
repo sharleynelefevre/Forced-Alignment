@@ -5,8 +5,8 @@ Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbre
 
 ```
 Usage:
-    forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
-    forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
+    forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
+    forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
     forced-alignment.py -h | --help
 
 Arguments:
@@ -15,13 +15,16 @@ Arguments:
     <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
                                             are seasons number separated by '-' that should be in the data subset
                                             e.g. : 1,2-3,4-5-6-7-8-9-10
-    check_files                             Checks that all files in file_list.txt are in <wav_path>
-                                            and vice-versa
     <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
                                             should contain a folder named <serie_uri>
                                             itself containg plenty of wav files
 
-Options:
+preprocess options:
+    --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
+    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa. Defaults to not checking.
+
+postprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
     --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
     --expected_time=<expected_time>         `float`, Optional.
@@ -36,23 +39,18 @@ Options:
     --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
                                             Defaults to 0.0
                                             Recommended : 0.15
-    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
-                                            and vice-versa. Defaults to not checking.
 ```
 
-### Preprocessing
-`forced-alignment.py` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
+### Preprocessing (`preprocess`)
+`forced-alignment.py preprocess` first adds brackets around normalized-characters names in the scripts defined in [pyannote.db](https://github.com/hbredin/pyannote-db-plumcot/blob/develop/CONTRIBUTING.md#idepisodetxt)
 
 e.g. :
 ```bash
-./forced-alignment.py Friends /vol/work/lerner/pyannote-db-plumcot \
-1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15 \
+./forced-alignment.py preprocess Friends /vol/work/lerner/pyannote-db-plumcot \
 --wav_path=/vol/work3/maurice/dvd_extracted
 ```
 
-*About `<serie_split>`* : The test set should always be the first season, the dev set might be season 2 or 2 and 3 depending on the data size.
-
-### Actual forced-alignment - VRBS
+### Actual forced-alignment - VRBS (`forced-alignment.sh`)
 
 You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source.
 You can customize logs outputs directories directly in the file using
@@ -74,7 +72,21 @@ export N_FILES=231 #number of lines in file_list.txt
 qsub -tc 10 -t 1-${N_FILES} forced-alignment.sh /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/${SERIE_URI}/file_list.txt ${SERIE_URI} /vol/work/lerner/pyannote-db-plumcot
 ```
 
-Once vrbs is done you can continue with `forced-alignment.py` (press `Enter`) which will transform the XML output of vrbs into [Gecko](https://github.com/gong-io/gecko) compliant-JSON. The file formats are described below. The script also removes speakers id from the transcript and puts them instead in a proper JSON attribute : `speaker["id"]`.
+### Post-processing (`postprocess`)
+
+Once vrbs is done you can continue with `forced-alignment.py postprocess` which will transform the XML output of vrbs into [Gecko](https://github.com/gong-io/gecko) compliant-JSON. The file formats are described below. The script also removes speakers id from the transcript and puts them instead in a proper JSON attribute : `speaker["id"]`.
+
+*About `<serie_split>`* : The test set should always be the first season, the dev set might be season 2 or 2 and 3 depending on the data size.
+
+e.g. :
+```bash
+./forced-alignment.py postprocess Friends /vol/work/lerner/pyannote-db-plumcot \
+1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15
+```
+
+
+
+
 
 After that, you may or may not want to convert all the annotations from gecko_JSON to RTTM, this relies on pyannote.core.
 
@@ -82,7 +94,8 @@ Type "n" or "no" (case insensitive) if you don't want to.
 
 *You're done !*
 
-## Post-processing
+## Manual correction
+### Pre-processing for gecko (`region_split`)
 
 If you plan on correcting the errors of the forced-alignment using gecko, you might want to use the `region_split` usage before-hand. So that the segment timings are more accurate.
 
@@ -99,6 +112,38 @@ split_regions options:
 e.g. :
 
 `./forced-alignment.py split_regions /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/Friends/forced-alignment/Friends.Season01.Episode01.json`
+
+### Update RTTM (`update_RTTM`)
+
+Once you're done with correcting the json file in gecko, you might want to convert it to RTTM and aligned...
+
+```
+Usage:
+    forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
+    forced-alignment.py update_aligned <aligned_path> <json_path>
+    forced-alignment.py -h | --help
+
+Arguments:
+    <rttm_path>                             Output of postprocess
+    <uem_path>                              Output of postprocess
+    <json_path>                             Path to the manually corrected, gecko-compliant json
+    <file_uri>                              uri of the file you corrected (should be in the RTTM file)
+```
+
+### Update aligned (`update_aligned`)
+
+```
+Usage:
+    forced-alignment.py update_aligned <aligned_path> <json_path>
+    forced-alignment.py -h | --help
+
+Arguments:
+    <json_path>                             Path to the manually corrected, gecko-compliant json
+    <aligned_path>                          Output of postprocess
+```
+
+Not Implemented
+
 # Format
 ## XML (VRBS)
 ```py
