@@ -4,9 +4,12 @@
 Tool which aligns audio and transcript of [Plumcot data](https://github.com/hbredin/pyannote-db-plumcot) using vrbs.
 
 Usage:
-    forced-alignment.py <serie_uri> <plumcot_path> <serie_split> [options]
+    forced-alignment.py preprocess <serie_uri> <plumcot_path> [--wav_path=<wav_path>]
+    forced-alignment.py postprocess <serie_uri> <plumcot_path> <serie_split> [options]
     forced-alignment.py check_files <serie_uri> <plumcot_path> <wav_path>
     forced-alignment.py split_regions <file_path> [--threshold]
+    forced-alignment.py update_RTTM <rttm_path> <uem_path> <json_path> <file_uri>
+    forced-alignment.py update_aligned <aligned_path> <json_path>
     forced-alignment.py -h | --help
 
 Arguments:
@@ -15,13 +18,21 @@ Arguments:
     <serie_split>                           <test>,<dev>,<train> where <test>, <dev> and <train>
                                             are seasons number separated by '-' that should be in the data subset
                                             e.g. : 1,2-3,4-5-6-7-8-9-10
-    check_files                             Checks that all files in file_list.txt are in <wav_path>
-                                            and vice-versa
     <wav_path>                              a priori /vol/work3/maurice/dvd_extracted/
                                             should contain a folder named <serie_uri>
                                             itself containg plenty of wav files
+    <rttm_path>                             Output of postprocess
+    <uem_path>                              Output of postprocess
+    <json_path>                             Path to the manually corrected, gecko-compliant json
+    <file_uri>                              uri of the file you corrected (should be in the RTTM file)
+    <aligned_path>                          Output of postprocess
 
-Options:
+preprocess options:
+    --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
+    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
+                                            and vice-versa. Defaults to not checking.
+
+postprocess options:
     --transcripts_path=<transcripts_path>   Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/transcripts
     --aligned_path=<aligned_path>           Defaults to <plumcot_path>/Plumcot/data/<serie_uri>/forced-alignment
     --expected_time=<expected_time>         `float`, Optional.
@@ -36,8 +47,6 @@ Options:
     --collar=<collar>                       `float`, Merge tracks with same label and separated by less than `collar` seconds.
                                             Defaults to 0.0
                                             Recommended : 0.15
-    --wav_path=<wav_path>                   Checks that all files in file_list.txt are in <wav_path>
-                                            and vice-versa. Defaults to not checking.
 
 split_regions options:
     <file_path>                             Absolute path to the gecko-json file you want to preprocess
@@ -65,6 +74,7 @@ from convert import *
 
 #pyannote
 from pyannote.core import Annotation,Segment,Timeline,notebook,SlidingWindowFeature,SlidingWindow
+from pyannote.database.util import load_rttm, load_uem
 
 def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     """
@@ -223,7 +233,9 @@ def gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_spl
             #read file, convert to annotation and write rttm
             with open(os.path.join(ALIGNED_PATH,file_name),"r") as file:
                 gecko_JSON=json.load(file)
-            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME)
+            annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON,uri,'speaker',
+                VRBS_CONFIDENCE_THRESHOLD,FORCED_ALIGNMENT_COLLAR,
+                EXPECTED_MIN_SPEECH_TIME, manual=False)
             with open(ANNOTATION_PATH,'a') as file:
                 annotation.write_rttm(file)
             with open(ANNOTATED_PATH,'a') as file:
@@ -286,27 +298,28 @@ def split_regions(file_path,threshold):
         json.dump(gecko_json,file)
     print(f"succesfully dumped {new_path}")
 
-def main(SERIE_PATH,TRANSCRIPTS_PATH,ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-    VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR,EXPECTED_MIN_SPEECH_TIME,wav_path=None):
-    print("adding brackets around speakers id")
-    write_brackets(SERIE_PATH,TRANSCRIPTS_PATH)
-    if wav_path:
-        check_files(SERIE_PATH,wav_path)
-    if not os.path.exists(ALIGNED_PATH):
-        os.mkdir(ALIGNED_PATH)
-    print("done, you should now launch vrbs before converting")
-    input("Press Enter when vrbs is done...")
-    print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
-    write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH)
-    if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
-        gecko_JSONs_to_RTTM(ALIGNED_PATH, ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-         VRBS_CONFIDENCE_THRESHOLD, FORCED_ALIGNMENT_COLLAR)
-    else:
-        print("Okay, no hard feelings")
-    if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
-        gecko_JSONs_to_aligned(ALIGNED_PATH)
-    else:
-        print("Okay then you're done ;)")
+def update_RTTM(rttm_path, uem_path, json_path, file_uri):
+    if file_uri not in json_path:
+        warnings.warn(f"replacing {file_uri} in RTTM by {json_path}")
+    print("loading RTTM...")
+    rttm=load_rttm(rttm_path)
+    print("loading UEM...")
+    uem=load_uem(uem_path)
+    
+    with open(json_path, 'r') as file:
+        gecko_JSON=json.load(file)
+    annotation,annotated=gecko_JSON_to_Annotation(gecko_JSON, file_uri, 'speaker', manual=True)
+    rttm[file_uri]=annotation
+    uem[file_uri]=annotated
+    print("writing updated RTTM...")
+    with open(rttm_path,'w') as file:
+        for annotation in rttm.values():
+            annotation.write_rttm(file)
+    print("writing updated UEM...")
+    with open(uem_path, 'w') as file:
+        for annotated in uem.values():
+            annotated.write_uem(file)
+    print(f"succesfully dumped {rttm_path} and {uem_path}")
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -314,25 +327,54 @@ if __name__ == '__main__':
         file_path=args['<file_path>']
         threshold=float(args["--threshold"]) if args["--threshold"] else 0.15
         split_regions(file_path,threshold)
+    elif args['update_RTTM']:
+        rttm_path=args['<rttm_path>']
+        uem_path=args['<uem_path>']
+        json_path=args['<json_path>']
+        file_uri=args['<file_uri>']
+        update_RTTM(rttm_path, uem_path, json_path, file_uri)
+    elif args['update_aligned']:
+        aligned_path=args['<aligned_path>']
+        json_path=args['<json_path>']
+        raise NotImplementedError()
     else:
         serie_uri=args["<serie_uri>"]
         plumcot_path=args["<plumcot_path>"]
         SERIE_PATH=os.path.join(plumcot_path,"Plumcot","data",serie_uri)
         transcripts_path=args["--transcripts_path"] if args["--transcripts_path"] else os.path.join(SERIE_PATH,"transcripts")
-        aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
 
         if args['check_files']:
             wav_path=os.path.join(args["<wav_path>"],serie_uri)
             check_files(SERIE_PATH,wav_path)
-        else:
+        elif args['preprocess']:
+            print("adding brackets around speakers id")
+            write_brackets(SERIE_PATH,transcripts_path)
+            print("done, you should now launch vrbs before converting")
+            wav_path=args['--wav_path']
+            if wav_path:
+                check_files(SERIE_PATH,wav_path)
+
+        elif args['postprocess']:
+            aligned_path = args["--aligned_path"] if args["--aligned_path"] else os.path.join(SERIE_PATH,"forced-alignment")
+            if not os.path.exists(aligned_path):
+                os.mkdir(aligned_path)
             serie_split={}
             for key, set in zip(["test","dev","train"],args["<serie_split>"].split(",")):
                 serie_split[key]=list(map(int,set.split("-")))
             expected_min_speech_time=float(args["--expected_time"]) if args["--expected_time"] else float('inf')
             vrbs_confidence_threshold=float(args["--conf_threshold"]) if args["--conf_threshold"] else 0.0
             forced_alignment_collar=float(args["--collar"]) if args["--collar"] else 0.0
-            ANNOTATION_PATH=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
-            ANNOTATED_PATH=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
+            annotation_path=os.path.join(aligned_path,"{}_{}collar.rttm".format(serie_uri,forced_alignment_collar))
+            annotated_path=os.path.join(aligned_path,"{}_{}confidence.uem".format(serie_uri,vrbs_confidence_threshold))
 
-            main(SERIE_PATH,transcripts_path,aligned_path,ANNOTATION_PATH, ANNOTATED_PATH, serie_split,
-                vrbs_confidence_threshold, forced_alignment_collar,expected_min_speech_time)
+            print("converting vrbs.xml to vrbs.json and adding proper id to vrbs alignment")
+            write_id_aligned(aligned_path,transcripts_path)
+            if do_this("Would you like to convert annotations from gecko_JSON to RTTM ?"):
+                gecko_JSONs_to_RTTM(aligned_path, annotation_path, annotated_path, serie_split,
+                 vrbs_confidence_threshold, forced_alignment_collar)
+            else:
+                print("Okay, no hard feelings")
+            if do_this("Would you like to convert annotations from gecko_JSON to LIMSI-compliant 'aligned' ?"):
+                gecko_JSONs_to_aligned(aligned_path)
+            else:
+                print("Okay then you're done ;)")
