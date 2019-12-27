@@ -274,6 +274,7 @@ def check_files(SERIE_PATH,wav_path):
         warnings.warn(f'{file_list - wav_uris} are not in {wav_path}')
     if wav_uris - file_list:
         warnings.warn(f'{wav_uris - file_list} are not in {SERIE_PATH}')
+    print("Done checking files. (No warning means everything is okay.)")
 
 def split_regions(file_path,threshold):
     with open(file_path,'r') as file:
