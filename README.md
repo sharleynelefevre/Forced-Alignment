@@ -53,12 +53,6 @@ e.g. :
 ### Actual forced-alignment - VRBS (`forced-alignment.sh`)
 
 You should then launch `forced-alignment.sh` to align audio and transcription. Unfortunately, it requires vrbs which is closed source.
-You can customize logs outputs directories directly in the file using
-
-```bash
-#$ -o /path/to/logs/output/
-#$ -e /path/to/logs/error/
-```
 
 Usage :
 ```bash
@@ -69,7 +63,8 @@ Usage with m107 (see [cluster 101](http://herve.niderb.fr/cluster101/)) :
 ```bash
 export SERIE_URI=Friends
 export N_FILES=231 #number of lines in file_list.txt
-qsub -tc 10 -t 1-${N_FILES} forced-alignment.sh /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/${SERIE_URI}/file_list.txt ${SERIE_URI} /vol/work/lerner/pyannote-db-plumcot
+export LOGS=/vol/work/lerner/logs #defaults to ~
+qsub -tc 10 -t 1-${N_FILES} -o ${LOGS} -e ${LOGS} forced-alignment.sh /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/${SERIE_URI}/file_list.txt ${SERIE_URI} /vol/work/lerner/pyannote-db-plumcot
 ```
 
 ### Post-processing (`postprocess`)
