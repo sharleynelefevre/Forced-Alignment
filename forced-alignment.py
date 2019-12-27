@@ -109,7 +109,7 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
         raise ValueError(f"no txt files were found in {TRANSCRIPTS_PATH}")
     with open(os.path.join(SERIE_PATH,"file_list.txt"),"w") as file:
         file.write("\n".join(file_list)    )
-    print("succesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
+    print("\nsuccesfully wrote file list to",os.path.join(SERIE_PATH,"file_list.txt"))
 
 
 def write_id_aligned(ALIGNED_PATH,TRANSCRIPTS_PATH):
