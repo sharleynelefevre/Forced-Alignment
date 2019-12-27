@@ -362,7 +362,7 @@ if __name__ == '__main__':
             print("adding brackets around speakers id")
             write_brackets(SERIE_PATH,transcripts_path)
             print("done, you should now launch vrbs before converting")
-            wav_path=args['--wav_path']
+            wav_path=os.path.join(args['--wav_path'],serie_uri)
             if wav_path:
                 check_files(SERIE_PATH,wav_path)
 
