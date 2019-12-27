@@ -83,7 +83,7 @@ def write_brackets(SERIE_PATH,TRANSCRIPTS_PATH):
     """
     file_counter=0
     file_list=[]
-    for file_name in os.listdir(TRANSCRIPTS_PATH):
+    for file_name in sorted(os.listdir(TRANSCRIPTS_PATH)):
         file_uri,extension=os.path.splitext(file_name)
         if extension==".txt":
             file_list.append(file_uri)#keep a list for qsub on m107
