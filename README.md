@@ -63,8 +63,9 @@ Usage with m107 (see [cluster 101](http://herve.niderb.fr/cluster101/)) :
 ```bash
 export SERIE_URI=Friends
 export N_FILES=231 #number of lines in file_list.txt
-export LOGS=/vol/work/lerner/logs #defaults to ~
-qsub -tc 10 -t 1-${N_FILES} -o ${LOGS} -e ${LOGS} forced-alignment.sh /vol/work/lerner/pyannote-db-plumcot/Plumcot/data/${SERIE_URI}/file_list.txt ${SERIE_URI} /vol/work/lerner/pyannote-db-plumcot
+export LOGS=/vol/work3/lefevre/logs #defaults to ~
+export plumcot=/vol/work3/lefevre/pyannote-db-plumcot
+qsub -tc 10 -t 1-${N_FILES} -o ${LOGS} -e ${LOGS} forced-alignment.sh $plumcot/Plumcot/data/${SERIE_URI}/file_list.txt ${SERIE_URI} $plumcot
 ```
 
 ### Post-processing (`postprocess`)
@@ -75,7 +76,7 @@ Once vrbs is done you can continue with `forced-alignment.py postprocess` which 
 
 e.g. :
 ```bash
-./forced-alignment.py postprocess Friends /vol/work/lerner/pyannote-db-plumcot \
+./forced-alignment.py postprocess Friends /vol/work3/lefevre/pyannote-db-plumcot \
 1,2-3,4-5-6-7-8-9-10 --expected_time=200 --conf_threshold=0.5 --collar=0.15
 ```
 
